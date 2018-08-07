@@ -33,7 +33,32 @@ backtest.py from the TWP library. Download backtest.py and put in the same folde
 
 #Load data
 def load_data():
-    price = np.sin(np.arange(200)/30.0) #sine prices
+    """ Get CSVs from https://www.kaggle.com/mczielinski/bitcoin-historical-data
+"""
+
+    column_renames = {
+       'Timestamp': 'timestamp',
+       'Open': 'open',
+       'High': 'high',
+       'Low': 'low',
+       'Close': 'close',
+       'Volume_(BTC)': 'volume_btc',
+       'Volume_(Currency)': 'volume_currency',
+       'Weighted_Price': 'weighted_price'
+    }
+    df = pd.read_csv('./data/bitstampUSD_1-min_data_2012-01-01_to_2018-06-27.csv')
+    df = df.rename(columns=column_renames)
+
+    """
+    #FOR PLOTTING dates (combine this with timestamp)
+    **********************************************
+    from datetime import datetime
+    datetime.strptime("2012-may-31 19:00", "%Y-%b-%d %H:%M")
+    datetime.datetime(2012, 5, 31, 19, 0)
+    x = np.array([datetime.datetime(2013, 9, 28, i, 0) for i in range(24)])
+    """
+
+    price = np.asarray(df.tail(200))[:,7]
     return price
 
 #Initialize first state, all items are placed deterministically
@@ -152,7 +177,7 @@ import random, timeit
 start_time = timeit.default_timer()
 
 indata = load_data()
-epochs = 100
+epochs = 300
 gamma = 0.9 #a high gamma makes a long term reward more valuable
 epsilon = 1
 learning_progress = []
@@ -195,8 +220,8 @@ for i in range(epochs):
     eval_reward = evaluate_Q(indata, model)
     print("Epoch #: %s Reward: %f Epsilon: %f" % (i,eval_reward, epsilon))
     learning_progress.append((eval_reward))
-    if epsilon > 0.1:
-        epsilon -= (1.0/epochs)
+    if epsilon > 0.01:
+        epsilon -= (0.95/epochs)
 
 elapsed = np.round(timeit.default_timer() - start_time, decimals=2)
 print("Completed in %f" % (elapsed,))
